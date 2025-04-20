@@ -1,0 +1,10 @@
+{
+    "name": "Testudo Enrichment",
+    "description": "A Chrome Extension that enriches testudo class schedule with planet-terp and rate my professor data.",
+    "version": "1.0",
+    "manifest_version": 3,
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": "icon.png"
+    }
+}
