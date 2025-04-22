@@ -1,10 +1,31 @@
 {
     "name": "Testudo Enrichment",
-    "description": "A Chrome Extension that enriches testudo class schedule with planet-terp and rate my professor data.",
+    "description": "A Chrome Extension that enriches Testudo class schedule with Planet‑Terp and RMP data.",
     "version": "1.0",
     "manifest_version": 3,
+  
     "action": {
-        "default_popup": "popup.html",
-        "default_icon": "icon.png"
-    }
-}
+      "default_popup": "popup.html",
+      "default_icon": "icon.png"
+    },
+    "permissions": [
+      "storage",
+      "activeTab",
+      "declarativeContent"
+    ],
+    "host_permissions": [
+      "*://app.testudo.umd.edu/*"
+    ],
+    "content_scripts": [
+      {
+        "matches": [
+          "*://app.testudo.umd.edu/*"
+        ],
+        "js": [
+          "backend.js"
+        ],
+        "run_at": "document_idle"
+      }
+    ]
+  }
+  
