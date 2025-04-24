@@ -1,25 +1,47 @@
 window.addEventListener("load", () => {
-    const courses = document.querySelectorAll(".course");
+    const courseDivs = Array.from(document.querySelectorAll(".course"));
+    const courses = courseDivs.map(element => element.id);
     console.log(`Found ${courses.length} course(s)`);
-  
-    // This will hold one sub-array per course, each of which is a list of
-    // the instructor names for that course.
-    const instructorsByCourse = [];
-  
-    courses.forEach(course => {
-      // Grab every <span class="section-instructor"> inside this .course
-      const instSpans = course.querySelectorAll(".section-instructor");
-  
-      // Turn NodeList → Array of trimmed text content
-      const names = Array.from(instSpans)
-                        .map(span => span.textContent.trim());
-  
-      console.log(`Course ${course.id || "(no id)"} instructors:`, names);
-  
-      instructorsByCourse.push(names);
-    });
-  
-    // Final result: array of arrays of names
-    console.log("All instructors grouped by course:", instructorsByCourse);
-  });
-  
+    console.log({courses, courseDivs})
+    // need to fetch for each instructor
+});
+
+
+
+// content-script.js
+(function() {
+  // keep a reference to the original fetch
+  const originalFetch = window.fetch.bind(window);
+
+  // your handler
+  function handleCourseResponse(data, url) {
+    // data is the parsed JSON (or text) from the response
+    console.log("Got course data for", url, data);
+    // …call your real function here…
+  }
+
+  // override fetch
+  window.fetch = async function(input, init) {
+    // figure out the URL string
+    const url = typeof input === "string" ? input : input.url;
+
+    // do the real fetch
+    const response = await originalFetch(input, init);
+
+    // if it’s the endpoint you care about…
+    if (url.includes("sections?")) {
+      // clone the response so we don’t consume the stream twice
+      const clone = response.clone();
+
+      // try JSON, fallback to text
+      clone.json()
+        .then(data => handleCourseResponse(data, url))
+        .catch(() =>
+          clone.text().then(txt => handleCourseResponse(txt, url))
+        );
+    }
+
+    // return the original response so the page’s JS sees it
+    return response;
+  };
+})();

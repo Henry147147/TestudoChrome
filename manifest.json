@@ -11,7 +11,8 @@
     "permissions": [
       "storage",
       "activeTab",
-      "declarativeContent"
+      "declarativeContent",
+      "scripting"
     ],
     "host_permissions": [
       "*://app.testudo.umd.edu/*"
