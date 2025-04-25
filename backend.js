@@ -1,47 +1,73 @@
-window.addEventListener("load", () => {
-    const courseDivs = Array.from(document.querySelectorAll(".course"));
-    const courses = courseDivs.map(element => element.id);
-    console.log(`Found ${courses.length} course(s)`);
-    console.log({courses, courseDivs})
-    // need to fetch for each instructor
-});
+const state = {};
 
+function onLoad() {
+  const courseDivs = Array.from(document.querySelectorAll(".course"));
+  const courses = courseDivs.map(element => element.id);
+  courses.forEach(course => {
+    if (!(course in state)) {
+        state[course] = {}
+    }
+  });
 
-
-// content-script.js
-(function() {
-  // keep a reference to the original fetch
-  const originalFetch = window.fetch.bind(window);
-
-  // your handler
-  function handleCourseResponse(data, url) {
-    // data is the parsed JSON (or text) from the response
-    console.log("Got course data for", url, data);
-    // …call your real function here…
+  for (const i in courseDivs) {
+    const courseElement = courseDivs[i];
+    const courseName = courses[i];
+    enrichCourseName(courseElement, courseName);
   }
 
-  // override fetch
-  window.fetch = async function(input, init) {
-    // figure out the URL string
-    const url = typeof input === "string" ? input : input.url;
 
-    // do the real fetch
-    const response = await originalFetch(input, init);
 
-    // if it’s the endpoint you care about…
-    if (url.includes("sections?")) {
-      // clone the response so we don’t consume the stream twice
-      const clone = response.clone();
 
-      // try JSON, fallback to text
-      clone.json()
-        .then(data => handleCourseResponse(data, url))
-        .catch(() =>
-          clone.text().then(txt => handleCourseResponse(txt, url))
-        );
-    }
+  const observer = new MutationObserver(mutations => {
+    const sectionRows = getSectionData(mutations);
+    const data = getHTMLDataFromRows(sectionRows);
+    console.log({data})
+  });
 
-    // return the original response so the page’s JS sees it
-    return response;
-  };
-})();
+  observer.observe(document.querySelector(".course-prefix-container"), {
+    childList: true,
+    subtree: true
+  });
+}
+
+window.addEventListener("load", onLoad);
+
+function getSectionData(mutations) {
+  const result = []
+  for (let { addedNodes } of mutations) {
+    addedNodes.forEach(node => {
+      if ((node instanceof Element) && node.matches(".sections-container")) {
+        const sectionInfo = Array.from(node.querySelectorAll(".section-info-container .row"));
+        if (sectionInfo) {
+          sectionInfo.forEach(element => result.push(element));
+        }
+      }
+    });
+  }
+  return result;
+}
+
+function enrichCourseName(courseElement, courseName) {
+
+}
+
+
+function getHTMLDataFromRows(rows) {
+  let className = rows[0]
+  let instructors = []
+  let instructorElement = []
+  let iconElements = []
+  while (className && !(className.matches(".course"))) {
+    className = className.parentElement;
+  }
+  className = className.id;
+
+  rows.forEach(element => {
+    instructors.push(...Array.from(element.querySelectorAll(".section-instructor")).map(e => e.innerText))
+    instructorElement.push(element.querySelector(".section-instructors"))
+    instructorElement.push(element.querySelector(".section-instructors"))
+    iconElements.push(element.querySelector(":scope > div:last-child"))
+  })
+  return {className, instructors, instructorElement, iconElements} 
+}
+
