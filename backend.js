@@ -1,6 +1,13 @@
 const state = {};
 
-function onLoad() {
+// todo make this a setting... 
+//document.getElementById("ocelot_ai").remove()
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function onLoad() {
   const courseDivs = Array.from(document.querySelectorAll(".course"));
   const courses = courseDivs.map(element => element.id);
   courses.forEach(course => {
@@ -47,8 +54,37 @@ function getSectionData(mutations) {
   return result;
 }
 
-function enrichCourseName(courseElement, courseName) {
+function showGPAGraph(e, ...a) {
+  console.warn({e, a})
+  console.warn("clicked")
+}
 
+function setElementStyle(element, style) {
+  for (const key in style) {
+    element.style[key] = style[key];
+  }
+}
+
+async function enrichCourseName(courseElement, courseName) {
+  const courseNameElement = courseElement.querySelector(".course-title")
+  const averageGpa = await getCourseAverageGPA(courseName)
+  
+  const gpa_element = document.createElement("span");
+  gpa_element.style.cursor = "pointer"
+  gpa_element.style.textDecoration = "underline"
+  gpa_element.onmouseenter = () => setElementStyle(gpa_element, {color: "blue"})
+  gpa_element.onmouseleave = () => setElementStyle(gpa_element, {color: "black"})
+  gpa_element.onclick = showGPAGraph
+  gpa_element.innerHTML = `(Avg: <bold>${averageGpa}</bold>)`
+
+  courseNameElement.parentElement.appendChild(gpa_element)
+  console.log({courseNameElement, courseName})
+}
+
+async function getCourseAverageGPA(courseName) {
+  // TODO implement
+  await sleep(2000)
+  return 3.1
 }
 
 
@@ -60,6 +96,7 @@ function getHTMLDataFromRows(rows) {
   while (className && !(className.matches(".course"))) {
     className = className.parentElement;
   }
+  return
   className = className.id;
 
   rows.forEach(element => {
