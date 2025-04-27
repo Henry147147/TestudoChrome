@@ -5,6 +5,8 @@ echo current_dir
 --alias qwen-7b-summarizer \
 --threads 16 \
 --threads-batch 16 \
+--host 0.0.0.0 \
+--port 8001 \
 --parallel 4 \
 --ctx-size 12288 \
 --batch-size 2048 \
@@ -19,3 +21,4 @@ echo current_dir
 --frequency-penalty 0.2 \
 --n-predict 150 \
 --keep -1 \
+-cb
