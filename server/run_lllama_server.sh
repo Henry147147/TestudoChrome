@@ -21,4 +21,5 @@ echo $current_dir
 --frequency-penalty 0.2 \
 --n-predict 150 \
 --keep -1 \
+--api-key "llama-api-key-183921"
 -cb
