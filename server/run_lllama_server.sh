@@ -1,7 +1,7 @@
 current_dir=$(pwd)
 echo $current_dir
 ./llama-server \
- -m "$current_dir/models/Qwen2.5-7B-Instruct-IQ4_XS.gguf" \
+ -m "$current_dir/models/llama-3.1-8b-instruct-q4_k_m.gguf" \
 --alias qwen-7b-summarizer \
 --threads 16 \
 --threads-batch 16 \
@@ -12,8 +12,6 @@ echo $current_dir
 --batch-size 2048 \
 --ubatch-size 512 \
 --gpu-layers 35 \
---cache-type-k q4_0 \
---cache-type-v q4_0 \
 --temp 0.1 \
 --top-p 0.9 \
 --top-k 40 \
@@ -21,5 +19,5 @@ echo $current_dir
 --frequency-penalty 0.2 \
 --n-predict 150 \
 --keep -1 \
---api-key "llama-api-key-183921"
+--api-key "llama-api-key-183921" \
 -cb
