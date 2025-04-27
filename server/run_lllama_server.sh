@@ -1,5 +1,7 @@
+current_dir=$(pwd)
+echo current_dir
 ./llama-server \
- ./models/Qwen2.5-7B-Instruct-IQ4_XS.gguf \
+ -m "$current_dir/models/Qwen2.5-7B-Instruct-IQ4_XS.gguf \
 --alias qwen-7b-summarizer \
 --threads 16 \
 --threads-batch 16 \
