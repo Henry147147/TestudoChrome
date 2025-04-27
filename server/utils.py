@@ -1,5 +1,8 @@
 from typing import List
 import json
+import inference
+
+inference_client = inference.init_client()
 
 GPA_CALC = {
     "A+":4.0, "A":4.0, "A-":3.7,
@@ -23,21 +26,10 @@ def aggregate_grade_data(grade_data):
     return histogram, gpa
 
 
-def split_and_summarize_reviews(reviews):
+async def split_and_summarize_reviews(reviews):
     result = [review["review"] for review in reviews]
-    buckets = bucketize(result, 50000)
-    bucket_count = len(buckets)
-    if bucket_count == 1:
-        summarized = summarize_single(buckets[0])
-    elif bucket_count > 1:
-        summaries = []
-        for bucket in buckets:
-            summaries.append(summarize_single(bucket))
-        summarized = combine_multiple_summarizations(summaries)
-    else:
-        return ["Insufficient reviews"]
-    return summarized
-
+    buckets = bucketize(result, 40000)
+    return await inference.run_batches(inference_client, buckets)
 
 def process_to_prompt(sentences):
     return sentences

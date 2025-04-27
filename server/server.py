@@ -57,7 +57,7 @@ async def class_reviews(course: str, professor: Optional[str] = None):
 
     If **professor** is supplied, only that professor’s reviews are returned.
     """
-    return _fetcher.getClassReviews(course, professor)
+    return await _fetcher.getClassReviews(course, professor)
 
 
 @app.get("/class/{course}/grades", summary="Grade distribution for a course")
@@ -81,12 +81,12 @@ async def class_grades(course: str, professor: Optional[str] = None):
 @app.get("/professor/{name}/ratings", summary="Professor ratings + reviews")
 async def professor_ratings(name: str):
     """Return ratings, difficulty, and review data for *name*."""
-    return _fetcher.getProfessorRatings(name, reviews=False)
+    return await _fetcher.getProfessorRatings(name, reviews=False)
 
 @app.get("/professor/{name}/reviews", summary="Professor ratings + reviews")
 async def professor_reviews(name: str):
     """Return ratings, difficulty, and review data for *name*."""
-    return _fetcher.getProfessorRatings(name, reviews=True)
+    return await _fetcher.getProfessorRatings(name, reviews=True)
 
 
 @app.get("/professor/{name}/grades", summary="All grades for a professor")

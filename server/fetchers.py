@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any, Tuple
 import planetterp
 
 _CACHE_PATH = ".cache.db"
-_DEFAULT_TTL = 12 * 60 * 60  # 12 h
+_DEFAULT_TTL = 72 * 60 * 60  # 72 h
 
 
 class _SQLCache:
@@ -101,7 +101,7 @@ class PlanetTerpCacheWrapper:
         self.db.put("course_grades", key, grades)
         return grades
 
-    def course(self, name: str, professorName: str) -> Dict:
+    async def course(self, name: str, professorName: str) -> Dict:
         key = (name.upper(), professorName.lower())
         cached = self.db.get("course_reviews", key)
         cached = False
@@ -115,12 +115,12 @@ class PlanetTerpCacheWrapper:
             r for r in data.get("reviews", []) if prof_lower in r["professor"].lower()
         ]
         result = {}
-        result["summarized"] = utils.split_and_summarize_reviews(reviews)
+        result["summarized"] = await utils.split_and_summarize_reviews(reviews)
         self.db.put("course_reviews", key, result)
         return result  
 
     # ---------- professor-centric ---------- #
-    def professor(self, name: str, reviews: bool) -> Dict:
+    async def professor(self, name: str, reviews: bool) -> Dict:
         key = (name.lower(), "")
         cached = self.db.get("prof_ratings", key)
         cached = False
@@ -130,7 +130,7 @@ class PlanetTerpCacheWrapper:
         data = planetterp.professor(name=name, reviews=reviews)
         result = {"average_rating": data["average_rating"]}
         if reviews:
-            result["summarized"] = utils.split_and_summarize_reviews(data["reviews"])
+            result["summarized"] = await utils.split_and_summarize_reviews(data["reviews"])
 
         self.db.put("prof_ratings", key, result)
         return result
@@ -155,11 +155,11 @@ class PlanetTerpFetcher:
         self.fetcher = PlanetTerpCacheWrapper()
 
     # ---------- class API ---------- #
-    def getClassReviews(
+    async def getClassReviews(
         self, className: str, professorName: str
     ) -> Dict:
         """Return course info (and reviews). Optionally filter to reviews for one professor."""
-        return self.fetcher.course(name=className, professorName=professorName)
+        return await self.fetcher.course(name=className, professorName=professorName)
 
     def getClassGrades(
         self, className: str, professorName: Optional[str] = None
@@ -168,9 +168,9 @@ class PlanetTerpFetcher:
         return self.fetcher.grades(course=className, professor=professorName)
 
     # ---------- professor API ---------- #
-    def getProfessorRatings(self, professorName: str, reviews: bool) -> Dict:
+    async def getProfessorRatings(self, professorName: str, reviews: bool) -> Dict:
         """Return professor metadata (includes `average_rating`, `difficulty`, etc.)."""
-        return self.fetcher.professor(name=professorName, reviews=reviews)
+        return await self.fetcher.professor(name=professorName, reviews=reviews)
 
     def getProfessorGrades(self, professorName: str) -> Dict:
         """Return all grade distributions for courses taught by `professorName`."""

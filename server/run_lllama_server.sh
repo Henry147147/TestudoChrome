@@ -9,7 +9,7 @@ echo $current_dir
 --port 8001 \
 --parallel 4 \
 --ctx-size 12288 \
---batch-size 2048 \
+--batch-size 3062 \
 --ubatch-size 512 \
 --gpu-layers 35 \
 --temp 0.1 \
