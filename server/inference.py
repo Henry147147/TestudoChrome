@@ -9,8 +9,8 @@ from openai import AsyncOpenAI
 # ---------------------------------------------------------------------------
 # Connection settings
 # ---------------------------------------------------------------------------
-#SUMM_BASE_URL  = "http://henry1477.asuscomm.com:8001/v1"
-SUMM_BASE_URL  = "http://173.73.44.246:8001/v1"
+SUMM_BASE_URL  = "http://henry1477.asuscomm.com:8001/v1"
+#SUMM_BASE_URL  = "http://173.73.44.246:8001/v1"
 API_KEY        = "llama-api-key-183921"
 
 def getSysPrompt(sentances):
@@ -95,16 +95,5 @@ async def run_batches(client, data):
             summary = await summarise_reviews(batch, client, "three")
             sums.append(summary)
         summary = await summarise_reviews(sums, client, "five")
-    return summary.replace("\n", " ")
-    
-    
-
-if __name__ == "__main__":
-    import json
-
-    client = init_client()
-    data = json.load(open("test.json"))
-    print(run_batches(client, data))
-    
-    
+    return summary.replace("\n", " ")  
     

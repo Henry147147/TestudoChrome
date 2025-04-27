@@ -91,7 +91,6 @@ class PlanetTerpCacheWrapper:
     def grades(self, course: str, professor: Optional[str]) -> Dict:
         key = (course.upper(), professor or "")
         cached = self.db.get("course_grades", key)
-        cached = False
         if cached:
             return cached
 
@@ -104,7 +103,6 @@ class PlanetTerpCacheWrapper:
     async def course(self, name: str, professorName: str) -> Dict:
         key = (name.upper(), professorName.lower())
         cached = self.db.get("course_reviews", key)
-        cached = False
         if cached:
             return cached
 
@@ -123,7 +121,6 @@ class PlanetTerpCacheWrapper:
     async def professor(self, name: str, reviews: bool) -> Dict:
         key = (name.lower(), "")
         cached = self.db.get("prof_ratings", key)
-        cached = False
         if cached and reviews:
             return cached
 
@@ -138,7 +135,6 @@ class PlanetTerpCacheWrapper:
     def professor_grades(self, name: str) -> Dict:
         key = (name.lower(), "")
         cached = self.db.get("prof_grades", key)
-        cached = False
         if cached:
             return cached
 

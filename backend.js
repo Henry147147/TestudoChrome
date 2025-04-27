@@ -1,7 +1,7 @@
 /**********************************************************************/
 /*                                UTILS                               */
 /**********************************************************************/
-
+const HOST = "http://henry1477.asuscomm.com:8000"
 /**
  * Pauses execution for a random duration between min and max milliseconds.
  * @param {number} min - The minimum time to sleep in milliseconds.
@@ -40,8 +40,9 @@ async function fetchCourseGPA(courseName) {
  * @returns {Promise<number>} A promise that resolves with the professor's rating.
  */
 async function fetchProfessorRating(professor) {
-  await waitRandomTime(250, 4000);
-  return 4.85;
+  const response = await fetch(`${HOST}/professor/${professor}/ratings`)
+  const jsonResponse = await response.json()
+  return jsonResponse;
 }
 
 /**
