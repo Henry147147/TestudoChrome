@@ -1,4 +1,5 @@
-lmdb
 fastapi[standard]
 planetterp
 RateMyProfessorAPI
+uvicorn
+vllm>=0.4.0

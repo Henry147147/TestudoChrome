@@ -1,75 +1,187 @@
-from abc import ABC, abstractmethod
-import planetterp as terp
-from typing import Optional
+from __future__ import annotations
 
-class Fetcher(ABC):
-    @abstractmethod
-    def getClassReviews(self, className: str, professorName: Optional[str] = None):
-        """Gets reviews for a class, optionally filtered by professor"""
-        pass
+import json
+import utils
+import sqlite3
+import time
+from pathlib import Path
+from typing import Optional, Dict, Any, Tuple
 
-    @abstractmethod
-    def getClassGrades(self, className: str, professorName: Optional[str] = None):
-        """Gets grades for a class, optionally filtered by professor"""
-        pass
+import planetterp
 
-    @abstractmethod
-    def getProfessorRatings(self, professorName: str):
-        """Gets professor ratings"""
-        pass
-
-    @abstractmethod
-    def getProfessorGrades(self, professorName: str):
-        """Gets professor grades"""
-        pass
+_CACHE_PATH = ".cache.db"
+_DEFAULT_TTL = 12 * 60 * 60  # 12 h
 
 
-class PlanetTerpFetcher(Fetcher):
-    def getClassReviews(self, className: str, professorName: Optional[str] = None):
-        """Gets reviews for a class, optionally filtered by professor"""
-        if professorName is None:
-            reviews = terp.course(name=className, reviews=True)
-        else:
-            reviews = terp.course(name=className, reviews=True)
-        print(reviews)
-        return reviews
+class _SQLCache:
+    """Very small JSON-blob cache."""
 
-    def getClassGrades(self, className: str, professorName: Optional[str] = None):
-        """Gets grades for a class, optionally filtered by professor"""
-        # Replace the following with actual logic
-        print(f"Getting grades for {className} with professor {professorName}")
-        return {}
+    def __init__(self, path: Path = _CACHE_PATH) -> None:
+        self.conn = sqlite3.connect(path)
+        self._init_schema()
 
-    def getProfessorRatings(self, professorName: str):
-        """Gets professor ratings"""
-        print(f"Getting ratings for professor {professorName}")
-        return {}
+    # ---------- public helpers ---------- #
+    def get(self, table: str, key: Tuple, ttl: int = _DEFAULT_TTL) -> Optional[Any]:
+        cur = self.conn.execute(
+            f"SELECT json, ts FROM {table} WHERE key1=? AND key2=?",
+            key,
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        blob, ts = row
+        if time.time() - ts > ttl:
+            return None
+        return json.loads(blob)
 
-    def getProfessorGrades(self, professorName: str):
-        """Gets professor grades"""
-        print(f"Getting grades for professor {professorName}")
-        return {}
+    def put(self, table: str, key: Tuple, obj: Any) -> None:
+        self.conn.execute(
+            f"""REPLACE INTO {table}(key1, key2, json, ts)
+                VALUES (?, ?, ?, ?)""",
+            (*key, json.dumps(obj), int(time.time())),
+        )
+        self.conn.commit()
+
+    # ---------- schema ---------- #
+    def _init_schema(self) -> None:
+        self.conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS course_reviews (
+                key1 TEXT,          -- course
+                key2 TEXT,          -- professor or ''
+                json TEXT NOT NULL,
+                ts   INTEGER NOT NULL,
+                PRIMARY KEY (key1, key2)
+            );
+
+            CREATE TABLE IF NOT EXISTS course_grades (
+                key1 TEXT,
+                key2 TEXT,
+                json TEXT NOT NULL,
+                ts   INTEGER NOT NULL,
+                PRIMARY KEY (key1, key2)
+            );
+
+            CREATE TABLE IF NOT EXISTS prof_ratings (
+                key1 TEXT,          -- professor
+                key2 TEXT DEFAULT '',  -- unused
+                json TEXT NOT NULL,
+                ts   INTEGER NOT NULL,
+                PRIMARY KEY (key1, key2)
+            );
+
+            CREATE TABLE IF NOT EXISTS prof_grades (
+                key1 TEXT,
+                key2 TEXT DEFAULT '',
+                json TEXT NOT NULL,
+                ts   INTEGER NOT NULL,
+                PRIMARY KEY (key1, key2)
+            );
+            """
+        )
 
 
-class RateMyProfessorFetcher(Fetcher):
-    BASE_URL = ""
+class PlanetTerpCacheWrapper:
+    """Light shim around the API that adds caching."""
 
-    def getClassReviews(self, className: str, professorName: Optional[str] = None):
-        """Gets reviews for a class, optionally filtered by professor"""
-        print(f"Fetching reviews from RateMyProfessor for {className}, professor: {professorName}")
-        return {}
+    def __init__(self) -> None:
+        self.db = _SQLCache()
 
-    def getClassGrades(self, className: str, professorName: Optional[str] = None):
-        """Gets grades for a class, optionally filtered by professor"""
-        print(f"Fetching grades from RateMyProfessor for {className}, professor: {professorName}")
-        return {}
+    # ---------- course-centric ---------- #
+    def grades(self, course: str, professor: Optional[str]) -> Dict:
+        key = (course.upper(), professor or "")
+        cached = self.db.get("course_grades", key)
+        cached = False
+        if cached:
+            return cached
 
-    def getProfessorRatings(self, professorName: str):
-        """Gets professor ratings"""
-        print(f"Fetching ratings from RateMyProfessor for professor {professorName}")
-        return {}
+        data = planetterp.grades(course=course, professor=professor)
+        grades, gpa = utils.aggregate_grade_data(data)
+        grades["gpa"] = gpa
+        self.db.put("course_grades", key, grades)
+        return grades
 
-    def getProfessorGrades(self, professorName: str):
-        """Gets professor grades"""
-        print(f"Fetching grades from RateMyProfessor for professor {professorName}")
-        return {}
+    def course(self, name: str, professorName: str) -> Dict:
+        key = (name.upper(), professorName.lower())
+        cached = self.db.get("course_reviews", key)
+        cached = False
+        if cached:
+            return cached
+
+        data = planetterp.course(name=name, reviews=True)
+        prof_lower = professorName.lower()
+        # keep only reviews whose `reviewer` matches professor
+        reviews = [
+            r for r in data.get("reviews", []) if prof_lower in r["professor"].lower()
+        ]
+        result = {}
+        result["summarized"] = utils.split_and_summarize_reviews(reviews)
+        self.db.put("course_reviews", key, result)
+        return result  
+
+    # ---------- professor-centric ---------- #
+    def professor(self, name: str, reviews: bool) -> Dict:
+        key = (name.lower(), "")
+        cached = self.db.get("prof_ratings", key)
+        cached = False
+        if cached and reviews:
+            return cached
+
+        data = planetterp.professor(name=name, reviews=reviews)
+        result = {"average_rating": data["average_rating"]}
+        if reviews:
+            result["summarized"] = utils.split_and_summarize_reviews(data["reviews"])
+
+        self.db.put("prof_ratings", key, result)
+        return result
+
+    def professor_grades(self, name: str) -> Dict:
+        key = (name.lower(), "")
+        cached = self.db.get("prof_grades", key)
+        cached = False
+        if cached:
+            return cached
+
+        data = planetterp.grades(professor=name)
+        grades, gpa = utils.aggregate_grade_data(data)
+        print(grades, gpa)
+        grades["gpa"] = gpa
+        self.db.put("prof_grades", key, grades)
+        return grades
+
+
+class PlanetTerpFetcher:
+    def __init__(self) -> None:
+        self.fetcher = PlanetTerpCacheWrapper()
+
+    # ---------- class API ---------- #
+    def getClassReviews(
+        self, className: str, professorName: str
+    ) -> Dict:
+        """Return course info (and reviews). Optionally filter to reviews for one professor."""
+        return self.fetcher.course(name=className, professorName=professorName)
+
+    def getClassGrades(
+        self, className: str, professorName: Optional[str] = None
+    ) -> Dict:
+        """Return grade distribution for a course, possibly narrowed to one professor."""
+        return self.fetcher.grades(course=className, professor=professorName)
+
+    # ---------- professor API ---------- #
+    def getProfessorRatings(self, professorName: str, reviews: bool) -> Dict:
+        """Return professor metadata (includes `average_rating`, `difficulty`, etc.)."""
+        return self.fetcher.professor(name=professorName, reviews=reviews)
+
+    def getProfessorGrades(self, professorName: str) -> Dict:
+        """Return all grade distributions for courses taught by `professorName`."""
+        return self.fetcher.professor_grades(professorName)
+
+
+
+# ------------------ demo ------------------ #
+if __name__ == "__main__":
+    fetcher = PlanetTerpFetcher()
+    print(fetcher.getClassGrades("CMSC132")[10])
+    #print(fetcher.getClassReviews("CMSC132", professorName="Larry Herman"))
+    #print(fetcher.getProfessorRatings("Larry Herman"))
+    #print(fetcher.getProfessorGrades("Larry Herman"))
