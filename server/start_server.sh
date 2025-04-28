@@ -1,0 +1,1 @@
+uvicorn server:app --host 0.0.0.0 --port 8000 --ws-max-queue 128 --ssl-keyfile ./privkey1.pem --ssl-certfile ./fullchain1.pem

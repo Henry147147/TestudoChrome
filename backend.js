@@ -1,7 +1,7 @@
 /**********************************************************************/
 /*                                UTILS                               */
 /**********************************************************************/
-const HOST = "http://henry1477.asuscomm.com:8000"
+const HOST = "https://henry1477.asuscomm.com:8000"
 /**
  * Pauses execution for a random duration between min and max milliseconds.
  * @param {number} min - The minimum time to sleep in milliseconds.
@@ -27,22 +27,49 @@ function applyStyles(element, style) {
 /**
  * Simulates fetching the average GPA for a given course.
  * @param {string} courseName - The identifier of the course.
- * @returns {Promise<number>} A promise that resolves with the average GPA.
+ * @returns {Promise<string>} A promise that resolves with the average GPA (as a string), or "None" on error.
  */
 async function fetchCourseGPA(courseName) {
-  await waitRandomTime(250, 4000);
-  return 3.1;
+  try {
+    const response = await fetch(`${HOST}/class/${courseName}/grades`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+    }
+
+    const jsonResponse = await response.json();
+    let rating = jsonResponse["gpa"];
+    if (rating == null || rating <= 0) {
+      return "None";
+    }
+    return rating.toFixed(2);
+  } catch (error) {
+    console.error(`Error fetching GPA for course "${courseName}":`, error);
+    return "None";
+  }
 }
 
 /**
  * Simulates fetching the rating for a given professor.
  * @param {string} professor - The name of the professor.
- * @returns {Promise<number>} A promise that resolves with the professor's rating.
+ * @returns {Promise<string>} A promise that resolves with the professor's rating (as a string), or "None" on error.
  */
 async function fetchProfessorRating(professor) {
-  const response = await fetch(`${HOST}/professor/${professor}/ratings`)
-  const jsonResponse = await response.json()
-  return jsonResponse;
+  try {
+    const response = await fetch(`${HOST}/professor/${encodeURIComponent(professor)}/ratings`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+    }
+
+    const jsonResponse = await response.json();
+    let rating = jsonResponse["average_rating"];
+    if (rating == null || rating <= 0) {
+      return "None";
+    }
+    return rating.toFixed(2);
+  } catch (error) {
+    console.error(`Error fetching rating for professor "${professor}":`, error);
+    return "None";
+  }
 }
 
 /**
@@ -106,8 +133,11 @@ async function enrichInstructorData(className, instructor, element) {
   gpaSpan.onmouseenter = () => applyStyles(gpaSpan, { color: "blue" });
   gpaSpan.onmouseleave = () => applyStyles(gpaSpan, { color: "black" });
   gpaSpan.onclick = handleProfessorRatingsClick;
-  gpaSpan.innerHTML = `(Rating: <b>${ratings}/5.0</b>)`;
-
+  if (ratings == "None") {
+    gpaSpan.innerHTML = `(Rating: <b>${ratings}</b>)`;
+  } else {
+    gpaSpan.innerHTML = `(Rating: <b>${ratings}/5</b>)`;
+  }
   placeholder.replaceWith(gpaSpan);
 }
 
@@ -227,12 +257,10 @@ async function initializeObservers() {
       state[course] = {};
     }
   });
-
   await Promise.all(
-    courseDivs.map((courseElement, idx) =>
-      enrichCourseTitle(courseElement, courses[idx])
-    )
-  );
+  courseDivs.map((courseElement, idx) => {
+    enrichCourseTitle(courseElement, courses[idx])
+  }));
 }
 
 window.addEventListener("load", initializeObservers);

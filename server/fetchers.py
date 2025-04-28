@@ -119,7 +119,7 @@ class PlanetTerpCacheWrapper:
 
     # ---------- professor-centric ---------- #
     async def professor(self, name: str, reviews: bool) -> Dict:
-        key = (name.lower(), "")
+        key = (name.lower(), reviews)
         cached = self.db.get("prof_ratings", key)
         if cached and reviews:
             return cached
