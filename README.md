@@ -1,10 +1,7 @@
 ## PLAN:
 
 
-- Add next to credits the average gpa with a popup for graphs on hover
-- - Needs grades for a class
-- Next to professor name put average gpa for that professor and class.
-- - Needs professor grade data for that class
-- Underline the professor, on hover, the name will have the summarized reviews for the professor and gpa.
-- Add another item next to syllabus repo with the summarized reviews as a popup.
-
+- Add next to credits the average gpa with a popup for graphs on click
+- Need to add loading and ui for professor reviews with an option to filter by class
+- need to make the ui for options
+- need to publish it after testing
