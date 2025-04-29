@@ -5,8 +5,8 @@
   "manifest_version": 3,
 
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": "icon.png"
+    "default_popup": "src/popup.html",
+    "default_icon": "assets/icon.png"
   },
 
   "permissions": [
@@ -26,7 +26,7 @@
   "content_scripts": [
     {
       "matches": ["*://app.testudo.umd.edu/*"],
-      "js": ["backend.js"],
+      "js": ["src/backend.js"],
       "run_at": "document_idle"
     }
   ]
