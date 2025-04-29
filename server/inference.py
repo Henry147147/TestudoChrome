@@ -14,7 +14,7 @@ SUMM_BASE_URL  = "http://henry1477.asuscomm.com:8001/v1"
 API_KEY        = "llama-api-key-183921"
 
 def getSysPrompt(sentances):
-    _SUMM_INSTRUCTION = (
+    return (
         "You are **ProfessorReviewSummarizer**, a neutral engine that turns raw "
         "student-written professor reviews into a concise overview.\n\n"
         "TASK: Extract *verbatim or lightly-paraphrased* statements from the reviews "
@@ -29,31 +29,8 @@ def getSysPrompt(sentances):
         "or advice.\n"
         "• Omit all mentions of specific courses, terms, topics, or the professor’s name.\n"
         f"• Produce **{sentances.lower()} sentences only**; do not prepend labels such as “SUMMARY:” and do not add "
-        "extra text after the third sentence."
+        f"extra text after the {sentances.lower()} sentence."
     )
-    return _SUMM_INSTRUCTION
-
-_SUMM_INSTRUCTION_STAGE2 = (
-    "You are **ProfessorReviewSummarizer-Stage2**, a neutral engine that merges "
-    "multiple three-sentence summaries of student reviews into a single concise overview.\n"
-    "INPUT: A batch of short summaries, each already focused on the professor’s "
-    "approachability, clarity, fairness, responsiveness, and teaching effectiveness.\n"
-    "TASK: Produce **exactly THREE sentences** that capture the dominant student "
-    "sentiment across all summaries.\n"
-    "STYLE RULES:\n"
-    "• DO NOT use any new line characters!!! \n"
-    "• Refer to the subject in third-person singular (e.g., “the professor”).\n"
-    "• Use an **extractive or minimally-paraphrased** style; favor phrases that appear "
-    "verbatim in the input summaries.\n"
-    "• Reduce redundancy: if multiple summaries repeat the same point, cite it once "
-    "with quantifiers like “many students” or “a few students”.\n"
-    "• Stay strictly factual—no added opinions, advice, or speculation.\n"
-    "• Omit professor names, course numbers, academic terms, and topics.\n"
-    "• End after sentence three; do not add labels or extra text.\n"
-    "• DO NOT use any new line characters!!!"
-)
-    
-
 
 # ---------------------------------------------------------------------------
 # Client initialiser
@@ -62,12 +39,12 @@ def init_client() -> AsyncOpenAI:
     return AsyncOpenAI(base_url=SUMM_BASE_URL,  api_key=API_KEY, timeout=600)
 
 
-def _summ_messages(blob: str, count, combining) -> list[dict]:
-    sys_prompt = _SUMM_INSTRUCTION_STAGE2 if combining else getSysPrompt(count)
+def _summ_messages(blob: str, count) -> list[dict]:
+    sys_prompt = getSysPrompt(count)
     blob = f"{blob}\n{getSysPrompt(count)}"
     return [{"role": "system", "content": sys_prompt}, {"role": "user", "content": blob}, {"role": "system", "content": sys_prompt}]
 
-async def summarise_reviews(reviews: List[str], summ: AsyncOpenAI, count="three", combining=False) -> str:
+async def summarise_reviews(reviews: List[str], summ: AsyncOpenAI, count="three") -> str:
     """Generate exactly three-sentence summary via server."""
     if not reviews:
         return "No user reviews present..."
@@ -75,7 +52,7 @@ async def summarise_reviews(reviews: List[str], summ: AsyncOpenAI, count="three"
     blob = "\n".join(f"• {r}" for r in reviews)
     resp = await summ.chat.completions.create(
         model="qwen-summariser",
-        messages=_summ_messages(blob, count, combining),
+        messages=_summ_messages(blob, count),
         temperature=0.1,
         top_p=0.9,
         frequency_penalty=0.2,

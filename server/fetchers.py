@@ -14,7 +14,6 @@ _DEFAULT_TTL = 72 * 60 * 60  # 72 h
 
 
 class _SQLCache:
-    """Very small JSON-blob cache."""
 
     def __init__(self, path: Path = _CACHE_PATH) -> None:
         self.conn = sqlite3.connect(path)
