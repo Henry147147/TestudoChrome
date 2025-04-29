@@ -77,8 +77,8 @@ async function fetchProfessorRating(professor) {
  * @param {Event} e - The click event.
  */
 function handleGPAGraphClick(e) {
-  console.log({ e });
-  console.log("clicked");
+  const targetSpanElement = walkBackUntil(e.target, (element => element.matches(".class-gpa-span")))
+  console.log({ targetSpanElement });
 }
 
 /**
@@ -86,8 +86,8 @@ function handleGPAGraphClick(e) {
  * @param {Event} e - The click event.
  */
 function handleProfessorRatingsClick(e) {
-  console.log({ e });
-  console.log("clicked");
+  const targetSpanElement = walkBackUntil(e.target, (element => element.matches(".professor-ratings-span")))
+  console.log({ targetSpanElement });
 }
 
 /**********************************************************************/
@@ -127,18 +127,19 @@ async function enrichInstructorData(className, instructor, element) {
   element.appendChild(placeholder);
 
   const ratings = await fetchProfessorRating(instructor);
-  const gpaSpan = document.createElement("span");
-  gpaSpan.style.cursor = "pointer";
-  gpaSpan.style.textDecoration = "underline";
-  gpaSpan.onmouseenter = () => applyStyles(gpaSpan, { color: "blue" });
-  gpaSpan.onmouseleave = () => applyStyles(gpaSpan, { color: "black" });
-  gpaSpan.onclick = handleProfessorRatingsClick;
+  const ratingsSpan = document.createElement("span");
+  ratingsSpan.className = "professor-ratings-span"
+  ratingsSpan.style.cursor = "pointer";
+  ratingsSpan.style.textDecoration = "underline";
+  ratingsSpan.onmouseenter = () => applyStyles(ratingsSpan, { color: "blue" });
+  ratingsSpan.onmouseleave = () => applyStyles(ratingsSpan, { color: "black" });
+  ratingsSpan.onclick = handleProfessorRatingsClick;
   if (ratings == "None") {
-    gpaSpan.innerHTML = `(Rating: <b>${ratings}</b>)`;
+    ratingsSpan.innerHTML = `(Rating: <b>${ratings}</b>)`;
   } else {
-    gpaSpan.innerHTML = `(Rating: <b>${ratings}/5</b>)`;
+    ratingsSpan.innerHTML = `(Rating: <b>${ratings}/5</b>)`;
   }
-  placeholder.replaceWith(gpaSpan);
+  placeholder.replaceWith(ratingsSpan);
 }
 
 /**
@@ -175,16 +176,20 @@ function extractSectionRows(mutations) {
   return result;
 }
 
+function walkBackUntil(element, predicate) {
+  while (element && !predicate(element)) {
+    element = element.parentElement
+  }
+  return element
+}
+
 /**
  * Parses HTML rows into structured data for enrichment.
  * @param {HTMLElement[]} rows - The section row elements.
  * @returns {Object} Parsed data including className, instructors, instructorElements, and iconElements.
  */
 function parseSectionRows(rows) {
-  let classElm = rows[0];
-  while (classElm && !classElm.matches(".course")) {
-    classElm = classElm.parentElement;
-  }
+  let classElm = walkBackUntil(rows[0], (element => element.matches(".course")))
   const courseId = classElm.id;
 
   const instructors = [];
@@ -215,6 +220,7 @@ async function enrichCourseTitle(courseElement, courseName) {
 
   const averageGpa = await fetchCourseGPA(courseName);
   const gpaSpan = document.createElement("span");
+  gpaSpan.className = "class-gpa-span"
   gpaSpan.style.cursor = "pointer";
   gpaSpan.style.textDecoration = "underline";
   gpaSpan.onmouseenter = () => applyStyles(gpaSpan, { color: "blue" });
@@ -258,9 +264,9 @@ async function initializeObservers() {
     }
   });
   await Promise.all(
-  courseDivs.map((courseElement, idx) => {
-    enrichCourseTitle(courseElement, courses[idx])
-  }));
+    courseDivs.map((courseElement, idx) => {
+      enrichCourseTitle(courseElement, courses[idx])
+    }));
 }
 
 window.addEventListener("load", initializeObservers);
