@@ -1,18 +1,180 @@
 /**********************************************************************/
+/*                                CHART                               */
+/**********************************************************************/
+
+/**
+ * Stacked grade-distribution bar chart with axes + Y-axis ticks.
+ * @param {Object.<string,number>} data   – e.g. { "A+": 3, A: 10, "A-": 5, ... }
+ * @param {HTMLElement} parent           – container that will receive the chart
+ */
+function createBarChart(data, parent, professorName) {
+  /* ---------- reshape data ---------- */
+  const groups = {};
+  for (const [grade, n] of Object.entries(data)) {
+    if (grade === "gpa") {
+      continue;
+    }
+    const letter = grade[0].toUpperCase();
+    const sign = grade[1] || "";
+    if (!groups[letter]) groups[letter] = { total: 0, parts: {} };
+    groups[letter].total += n;
+    groups[letter].parts[sign] = (groups[letter].parts[sign] || 0) + n;
+  }
+  const maxTotal = Math.max(...Object.values(groups).map(g => g.total));
+  const baseHue = { A: 220, B: 150, C: 35, D: 285, F: 0 };
+
+  /* ---------- outer frame ---------- */
+  const frame = document.createElement("div");
+  Object.assign(frame.style, {
+    position: "relative",
+    padding: "36px 48px 48px 60px", // space for ticks & labels
+    width: "100%",
+    boxSizing: "border-box",
+  });
+
+  /* ---------- chart body ---------- */
+  const chart = document.createElement("div");
+  Object.assign(chart.style, {
+    display: "flex",
+    alignItems: "flex-end",
+    gap: "12px",
+    height: "240px",
+  });
+
+  /* ---------- stacked bars ---------- */
+  const variants = [["-", 0.5], ["", 1], ["+", 1.5]];
+  for (const letter of Object.keys(groups).sort()) {
+    const { total, parts } = groups[letter];
+
+    const bar = document.createElement("div");
+    Object.assign(bar.style, {
+      flex: "1",
+      display: "flex",
+      flexDirection: "column-reverse",
+      height: `${(total / maxTotal) * 100}%`,
+      position: "relative",
+    });
+
+    for (const [sign, lightMul] of variants) {
+      const count = parts[sign] || 0;
+      if (!count) continue;
+
+      const seg = document.createElement("div");
+      seg.style.cssText = `
+        height:${(count / total) * 100}%;
+        background:hsl(${baseHue[letter] ?? 200} 65% ${50 * lightMul}%);
+        position:relative;
+      `;
+
+      const tip = document.createElement("div");
+      tip.textContent = `${letter}${sign || ""}: ${count}`;
+      tip.style.cssText = `
+        position:absolute; bottom:calc(100% + 4px); left:50%;
+        transform:translateX(-50%);
+        font-size:.75rem; background:#222; color:#fff;
+        padding:2px 6px; border-radius:4px;
+        white-space:nowrap; pointer-events:none;
+        opacity:0; transition:opacity .2s;
+        z-index: 100;
+      `;
+      seg.onmouseenter = () => (tip.style.opacity = "1");
+      seg.onmouseleave = () => (tip.style.opacity = "0");
+      seg.appendChild(tip);
+      bar.appendChild(seg);
+    }
+
+    const lbl = document.createElement("span");
+    lbl.textContent = letter;
+    lbl.style.cssText = `
+      position:absolute; bottom:-1.4em; left:50%;
+      transform:translateX(-50%);
+      font-size:.8rem; user-select:none;
+    `;
+    bar.appendChild(lbl);
+    chart.appendChild(bar);
+  }
+
+  /* ---------- axis lines ---------- */
+  const axisY = document.createElement("div");
+  axisY.style.cssText = `
+    position:absolute; top:32px; bottom:48px; left:48px;
+    width:2px; background:#333;
+  `;
+  const axisX = document.createElement("div");
+  axisX.style.cssText = `
+    position:absolute; left:60px; right:32px; bottom:32px;
+    height:2px; background:#333;
+  `;
+
+  /* ---------- axis labels ---------- */
+  let xTitle;
+  let reviewDiv;
+  if (professorName) {
+    xTitle = document.createElement("span");
+    xTitle.textContent = "Professor Reviews:";
+    xTitle.style.cssText = `
+      position:absolute; bottom:0; left:50%;
+      transform:translate(-50%, 50%);
+      font-size:.8rem; font-weight:600; white-space:nowrap;
+      user-select:none;
+    `;
+
+    reviewDiv = document.createElement("div")
+    reviewDiv.className = "professor-review-container"
+    applyStyles(reviewDiv, {
+      display: "flex", 
+      justifyContent: "center",
+      marginTop: "20px"
+    })
+    const spinner = document.createElement("span")
+    spinner.className = "gpa-spinner"
+    reviewDiv.appendChild(spinner)
+  }
+
+
+  /* ---------- Y-axis tick marks & labels ---------- */
+  const tickSteps = [0, 25, 50, 75];      // %
+  tickSteps.forEach(pct => {
+    const tick = document.createElement("div");
+    tick.style.cssText = `
+      position:absolute; left:46px;
+      width:6px; height:2px; background:#333;
+      bottom:calc(${pct}% + 32px);
+      transform:translateY(50%);
+    `;
+    const lbl = document.createElement("span");
+    lbl.textContent = `${pct}%`;
+    lbl.style.cssText = `
+      position:absolute; left:0; bottom:calc(${pct}% + 32px);
+      transform:translateX(-8px) translateY(50%);
+      font-size:.7rem; text-align:right; width:40px;
+      user-select:none;
+    `;
+    frame.append(tick, lbl);
+  });  
+
+  /* ---------- assemble ---------- */
+  if (professorName) {
+    frame.append(axisY, axisX, xTitle, chart);
+    parent.appendChild(frame);
+    parent.parentElement.appendChild(reviewDiv);
+    fetch(`${HOST}/professor/${professorName}/reviews`)
+    .then(res => res.json())
+    .then(data => console.log({data}))
+  } else {
+    frame.append(axisY, axisX, chart);
+    parent.appendChild(frame);
+  }
+
+}
+
+
+
+
+/**********************************************************************/
 /*                                UTILS                               */
 /**********************************************************************/
 const HOST = "https://henry1477.asuscomm.com:8000";
-/**
- * Pauses execution for a random duration between min and max milliseconds.
- * @param {number} min - The minimum time to sleep in milliseconds.
- * @param {number} max - The maximum time to sleep in milliseconds.
- * @returns {Promise<void>} A promise that resolves after the delay.
- */
-function waitRandomTime(min, max) {
-  if (min > max) [min, max] = [max, min];
-  const randomMs = Math.floor(Math.random() * (max - min + 1)) + min;
-  return new Promise(resolve => setTimeout(resolve, randomMs));
-}
 
 /**
  * Applies a set of CSS styles to a DOM element.
@@ -42,16 +204,11 @@ function closeActivePopup() {
   }
 }
 
-/**
- * Creates (or toggles) a popup next to a trigger element.
- * @param {HTMLElement} trigger - The element that was clicked.
- * @param {HTMLElement | string} content - The node or HTML string to display inside the popup.
- */
 function togglePopup(trigger, content) {
   // Same trigger → toggle off
   if (activePopup && activePopup.trigger === trigger) {
     closeActivePopup();
-    return;
+    return false;
   }
 
   // Clicked a new trigger → close old and open new
@@ -71,7 +228,7 @@ function togglePopup(trigger, content) {
     borderRadius: "4px",
     boxShadow: "0 2px 6px rgba(0,0,0,.2)",
     padding: "8px",
-    maxWidth: "280px",
+    width: "20rem",
     fontSize: "13px"
   });
 
@@ -83,6 +240,7 @@ function togglePopup(trigger, content) {
 
   document.body.appendChild(popup);
   activePopup = { popup, trigger };
+  return true;
 }
 
 // Dismiss popup on outside click or scroll
@@ -96,7 +254,6 @@ function outsideDismissListener(e) {
   }
 }
 window.addEventListener("click", outsideDismissListener);
-window.addEventListener("scroll", closeActivePopup, { passive: true });
 
 /**********************************************************************/
 /*                        DATA-FETCHING HELPERS                       */
@@ -147,7 +304,21 @@ function handleGPAGraphClick(e) {
 
   // Dummy content; replace with graph / async fetch if desired
   const courseName = targetSpan.closest(".course").id;
-  togglePopup(targetSpan, `<b>${courseName}</b><br/>GPA distribution graph coming soon…`);
+  const opened = togglePopup(targetSpan, `<b class="popup-graph-title">${courseName}</b><br/><div id="chart-area"></div>`);
+  if (opened) {
+    fetch(`${HOST}/class/${courseName}/grades`)
+      .then(response => response.json())
+      .then(data => {
+        let total = 0
+        for (const key in data) {
+          if (key !== "gpa") {
+            total += data[key]
+          }
+        }
+        document.querySelector(".popup-graph-title").innerText += `: Total Grades: ${total}`
+        createBarChart(data, document.getElementById("chart-area"));
+      })
+  }
 }
 
 /**
@@ -156,9 +327,28 @@ function handleGPAGraphClick(e) {
 function handleProfessorRatingsClick(e) {
   const targetSpan = walkBackUntil(e.target, el => el.matches(".professor-ratings-span"));
   if (!targetSpan) return;
+  console.log({ targetSpan })
+  const profName = targetSpan.parentElement.querySelector(".section-instructor").innerText;
+  const courseName = targetSpan.closest(".course").id;
+  console.warn({ profName, courseName })
+  const opened = togglePopup(targetSpan, `<b class="popup-graph-title">${profName}</b><br/><div id="chart-area"></div>`);
+  if (opened) {
+    console.log(`${HOST}/professor/${profName}/grades`)
+    fetch(`${HOST}/professor/${profName}/grades`)
+      .then(response => response.json())
+      .then(data => {
+        console.log({ data })
+        let total = 0
+        for (const key in data) {
+          if (key !== "gpa") {
+            total += data[key]
+          }
+        }
+        document.querySelector(".popup-graph-title").innerHTML += `<br\>Total Grades: ${total} &nbsp; GPA: ${data["gpa"].toFixed(2)}`
+        createBarChart(data, document.getElementById("chart-area"), profName);
+      })
+  }
 
-  const profName = targetSpan.textContent.replace(/\(Rating: |\/5\)|\)/g, "").trim();
-  togglePopup(targetSpan, `<b>${profName}</b><br/>Detailed rating breakdown coming soon…`);
 }
 
 /**********************************************************************/
@@ -170,8 +360,7 @@ style.textContent = `
   .gpa-spinner{display:inline-block;width:.65em;height:.65em;border:.15em solid currentColor;border-right-color:transparent;border-radius:50%;animation:gpa-spin .6s linear infinite;vertical-align:middle}
   @keyframes gpa-spin{to{transform:rotate(360deg)}}
   .enrichment-popup{animation:fade-in .14s ease-out}
-  @keyframes fade-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
-`;
+  @keyframes fade-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}`;
 document.head.appendChild(style);
 
 const state = {};
