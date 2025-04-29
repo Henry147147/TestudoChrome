@@ -15,9 +15,12 @@ GPA_CALC = {
 def aggregate_grade_data(grade_data):
     histogram = {g: 0 for g in GPA_CALC}
     for entry in grade_data:
-        for grade, count in entry.items():
-            if grade in GPA_CALC:
-                histogram[grade] += int(count)
+        if isinstance(entry, str):
+            print(entry)
+        else:
+            for grade, count in entry.items():
+                if grade in GPA_CALC:
+                    histogram[grade] += int(count)
 
     total_points = sum(GPA_CALC[g] * c for g, c in histogram.items())
     total_taken  = sum(c for g, c in histogram.items() if g != "W")  # skip W
