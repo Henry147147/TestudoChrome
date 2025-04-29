@@ -1,41 +1,19 @@
 /**********************************************************************/
-/*                                CHARTS                              */
-/**********************************************************************/
-import Chart from 'chart.js/auto'
-
-async function attachChart() {
-  const data = [
-    { year: 2010, count: 10 },
-    { year: 2011, count: 20 },
-    { year: 2012, count: 15 },
-    { year: 2013, count: 25 },
-    { year: 2014, count: 22 },
-    { year: 2015, count: 30 },
-    { year: 2016, count: 28 },
-  ];
-
-  new Chart(
-    document.getElementById('enrichment-popup'),
-    {
-      type: 'bar',
-      data: {
-        labels: data.map(row => row.year),
-        datasets: [
-          {
-            label: 'Acquisitions by year',
-            data: data.map(row => row.count)
-          }
-        ]
-      }
-    }
-  );
-}
-
-
-/**********************************************************************/
 /*                                UTILS                               */
 /**********************************************************************/
 const HOST = "https://henry1477.asuscomm.com:8000";
+/**
+ * Pauses execution for a random duration between min and max milliseconds.
+ * @param {number} min - The minimum time to sleep in milliseconds.
+ * @param {number} max - The maximum time to sleep in milliseconds.
+ * @returns {Promise<void>} A promise that resolves after the delay.
+ */
+function waitRandomTime(min, max) {
+  if (min > max) [min, max] = [max, min];
+  const randomMs = Math.floor(Math.random() * (max - min + 1)) + min;
+  return new Promise(resolve => setTimeout(resolve, randomMs));
+}
+
 /**
  * Applies a set of CSS styles to a DOM element.
  * @param {HTMLElement} element - The target element to style.
@@ -105,7 +83,6 @@ function togglePopup(trigger, content) {
 
   document.body.appendChild(popup);
   activePopup = { popup, trigger };
-  attachChart();
 }
 
 // Dismiss popup on outside click or scroll
