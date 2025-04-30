@@ -160,7 +160,14 @@ function createBarChart(data, parent, professorName) {
     parent.parentElement.appendChild(reviewDiv);
     fetch(`${HOST}/professor/${professorName}/reviews`)
     .then(res => res.json())
-    .then(data => console.log({data}))
+    .then(data => {
+      const containerDiv = document.querySelector('.professor-review-container');
+      const reviewEl = document.createElement('p')
+      const ital = document.createElement("i")
+      ital.innerText = data["summarized"]
+      reviewEl.appendChild(ital)
+      containerDiv.replaceChildren(reviewEl)
+      })
   } else {
     frame.append(axisY, axisX, chart);
     parent.appendChild(frame);
@@ -270,7 +277,7 @@ async function fetchCourseGPA(courseName) {
     const { gpa } = await response.json();
     return gpa && gpa > 0 ? gpa.toFixed(2) : "None";
   } catch (err) {
-    console.error("fetchCourseGPA", err);
+    console.debug("fetchCourseGPA", err);
     return "None";
   }
 }
@@ -287,7 +294,7 @@ async function fetchProfessorRating(professor) {
     const { average_rating } = await response.json();
     return average_rating && average_rating > 0 ? average_rating.toFixed(2) : "None";
   } catch (err) {
-    console.error("fetchProfessorRating", err);
+    console.debug("fetchProfessorRating", err);
     return "None";
   }
 }
@@ -449,7 +456,7 @@ async function initializeObservers() {
     try {
       enrichSectionData(parseSectionRows(rows));
     } catch (err) {
-      console.error("enrichSectionData", err);
+      console.debug("enrichSectionData", err);
     }
   });
 

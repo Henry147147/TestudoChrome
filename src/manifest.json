@@ -5,8 +5,8 @@
   "manifest_version": 3,
 
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": "icon.png"
+    "default_icon": "icon.png",
+    "default_popup": "popup.html"
   },
 
   "permissions": [
