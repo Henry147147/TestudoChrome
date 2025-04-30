@@ -6,6 +6,9 @@ from typing import Optional
 
 import logging
 from fastapi import FastAPI, Request
+from contextlib import asynccontextmanager
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron impoprt BackgroundScheduler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -15,6 +18,8 @@ import utils
 # --------------------------------------------------
 #  FastAPI app + global exception handler
 # --------------------------------------------------
+
+
 app = FastAPI(
     title="PlanetTerp REST API proxy",
     version="1.3.0",
@@ -29,9 +34,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logging.error("Unhandled exception on %s: %s", request.url.path, exc, exc_info=True)
+    logging.error("Unhandled exception on %s: %s",
+                  request.url.path, exc, exc_info=True)
     return JSONResponse(
         status_code=502,
         content={
@@ -42,6 +49,26 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 _fetcher = PlanetTerpFetcher()
+
+
+async def weekly_prefetch():
+    _fetcher.prefetchAllCourseData()
+    await _fetcher.prefetchAllProfessorData()
+
+# Set up the scheduler
+scheduler = BackgroundScheduler()
+trigger = CronTrigger(hour=0, minute=0, day_of_week=0)  # midnight every day
+scheduler.add_job(my_daily_task, trigger)
+scheduler.start()
+
+app = FastAPI()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    scheduler.shutdown()
+
 
 # --------------------------------------------------
 #  Course endpoints
@@ -71,7 +98,6 @@ async def class_grades(course: str, professor: Optional[str] = None):
     If **professor** is supplied, results are limited to that professor.
     """
     return _fetcher.getClassGrades(course, professor)
-    
 
 
 # --------------------------------------------------
@@ -81,6 +107,7 @@ async def class_grades(course: str, professor: Optional[str] = None):
 async def professor_ratings(name: str):
     """Return ratings, difficulty, and review data for *name*."""
     return await _fetcher.getProfessorRatings(name, reviews=False)
+
 
 @app.get("/professor/{name}/reviews", summary="Professor ratings + reviews")
 async def professor_reviews(name: str):

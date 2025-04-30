@@ -3,3 +3,4 @@ planetterp
 RateMyProfessorAPI
 uvicorn
 openai
+apscheduler

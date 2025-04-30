@@ -122,7 +122,7 @@ function createBarChart(data, parent, professorName) {
     reviewDiv = document.createElement("div")
     reviewDiv.className = "professor-review-container"
     applyStyles(reviewDiv, {
-      display: "flex", 
+      display: "flex",
       justifyContent: "center",
       marginTop: "20px"
     })
@@ -151,7 +151,7 @@ function createBarChart(data, parent, professorName) {
       user-select:none;
     `;
     frame.append(tick, lbl);
-  });  
+  });
 
   /* ---------- assemble ---------- */
   if (professorName) {
@@ -159,14 +159,14 @@ function createBarChart(data, parent, professorName) {
     parent.appendChild(frame);
     parent.parentElement.appendChild(reviewDiv);
     fetch(`${HOST}/professor/${professorName}/reviews`)
-    .then(res => res.json())
-    .then(data => {
-      const containerDiv = document.querySelector('.professor-review-container');
-      const reviewEl = document.createElement('p')
-      const ital = document.createElement("i")
-      ital.innerText = data["summarized"]
-      reviewEl.appendChild(ital)
-      containerDiv.replaceChildren(reviewEl)
+      .then(res => res.json())
+      .then(data => {
+        const containerDiv = document.querySelector('.professor-review-container');
+        const reviewEl = document.createElement('p')
+        const ital = document.createElement("i")
+        ital.innerText = data["summarized"]
+        reviewEl.appendChild(ital)
+        containerDiv.replaceChildren(reviewEl)
       })
   } else {
     frame.append(axisY, axisX, chart);

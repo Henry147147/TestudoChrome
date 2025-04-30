@@ -114,7 +114,7 @@ class PlanetTerpCacheWrapper:
         result = {}
         result["summarized"] = await utils.split_and_summarize_reviews(reviews)
         self.db.put("course_reviews", key, result)
-        return result  
+        return result
 
     # ---------- professor-centric ---------- #
     async def professor(self, name: str, reviews: bool) -> Dict:
@@ -171,12 +171,58 @@ class PlanetTerpFetcher:
         """Return all grade distributions for courses taught by `professorName`."""
         return self.fetcher.professor_grades(professorName)
 
+    @staticmethod
+    def _getAllFromPagedEndpoint(endpoint_function, key="name", sleepTime=4):
+        allSet = set()
+        hasMore = True
+        offset = 0
+        while hasMore:
+            currentData = endpoint_function(limit=100, offset=offset)
+            if isinstance(currentData, list) and len(currentData) > 0:
+                for data in currentData:
+                    allSet.add(data[key])
+                offset += 100
+                time.sleep(sleepTime)
+            else:
+                hasMore = False
+        return allSet
+
+    @staticmethod
+    def getAllProfessorNames():
+        return PlanetTerpFetcher._getAllFromPagedEndpoint(plannetterp.professors)
+
+    @staticmethod
+    def getAllCourses():
+        return PlanetTerpFetcher._getAllFromPagedEndpoint(plannetterp.courses)
+    
+    async def prefetchAllProfessorData(self):
+        print("Starting prefetchAllProfessorData")
+        professorNames = PlanetTerpFetcher.getAllProfessorNames()
+        print("Got all professor names")
+        for name in professorNames:
+            try:
+                self.getProfessorGrades(name)
+                time.sleep(5)
+                await self.getProfessorRatings(name, reviews=False)
+                await self.getProfessorRatings(name, reviews=True)
+            except:
+                pass
+        print("Done prefetchAllProfessorData")
+    
+    def prefetchAllCourseData(self):
+        print("Starting prefetchAllCourseData")
+        classNames = PlanetTerpFetcher.getAllCourses()
+        print("Got all professor names")
+        for name in classNames:
+            try:
+                self.getClassGrades(name)
+                time.sleep(5)
+            except:
+                pass
+        print("Done prefetchAllCourseData")
 
 
-# ------------------ demo ------------------ #
+
 if __name__ == "__main__":
-    fetcher = PlanetTerpFetcher()
-    print(fetcher.getClassGrades("CMSC132")[10])
-    #print(fetcher.getClassReviews("CMSC132", professorName="Larry Herman"))
-    #print(fetcher.getProfessorRatings("Larry Herman"))
-    #print(fetcher.getProfessorGrades("Larry Herman"))
+    f = PlanetTerpFetcher()
+    f.getAllProfessorNames()
