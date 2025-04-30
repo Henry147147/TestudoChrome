@@ -58,7 +58,7 @@ async def weekly_prefetch():
 # Set up the scheduler
 scheduler = BackgroundScheduler()
 trigger = CronTrigger(hour=0, minute=0, day_of_week=0)  # midnight every day
-scheduler.add_job(my_daily_task, trigger)
+scheduler.add_job(weekly_prefetch, trigger)
 scheduler.start()
 
 app = FastAPI()
