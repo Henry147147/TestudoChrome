@@ -6,3 +6,4 @@ server/.cache.db
 package-lock.json
 server/models
 dist
+venv
