@@ -51,7 +51,7 @@ async def summarise_reviews(reviews: List[str], summ: AsyncOpenAI, count="three"
 
     blob = "\n".join(f"• {r}" for r in reviews)
     resp = await summ.chat.completions.create(
-        model="qwen-summariser",
+        model="summarizer",
         messages=_summ_messages(blob, count),
         temperature=0.1,
         top_p=0.9,

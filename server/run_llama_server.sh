@@ -1,6 +1,6 @@
 ./llama-server \
  -hf lmstudio-community/gemma-3-4B-it-qat-GGUF:Q4_0 \
---alias qwen-7b-summarizer \
+--alias summarizer \
 --threads 16 \
 --threads-batch 16 \
 --host 0.0.0.0 \
