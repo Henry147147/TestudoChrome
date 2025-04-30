@@ -8,7 +8,7 @@ import logging
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
