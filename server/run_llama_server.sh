@@ -1,7 +1,5 @@
-current_dir=$(pwd)
-echo $current_dir
 ./llama-server \
- -m "$current_dir/models/llama-3.1-8b-instruct-q4_k_m.gguf" \
+ -hf lmstudio-community/gemma-3-4B-it-qat-GGUF:Q4_0 \
 --alias qwen-7b-summarizer \
 --threads 16 \
 --threads-batch 16 \
