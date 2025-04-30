@@ -194,7 +194,7 @@ class PlanetTerpFetcher:
     @staticmethod
     def getAllCourses():
         return PlanetTerpFetcher._getAllFromPagedEndpoint(plannetterp.courses)
-    
+
     async def prefetchAllProfessorData(self):
         print("Starting prefetchAllProfessorData")
         professorNames = PlanetTerpFetcher.getAllProfessorNames()
@@ -208,7 +208,7 @@ class PlanetTerpFetcher:
             except:
                 pass
         print("Done prefetchAllProfessorData")
-    
+
     def prefetchAllCourseData(self):
         print("Starting prefetchAllCourseData")
         classNames = PlanetTerpFetcher.getAllCourses()
@@ -220,9 +220,3 @@ class PlanetTerpFetcher:
             except:
                 pass
         print("Done prefetchAllCourseData")
-
-
-
-if __name__ == "__main__":
-    f = PlanetTerpFetcher()
-    f.getAllProfessorNames()
