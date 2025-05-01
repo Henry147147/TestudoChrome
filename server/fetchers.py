@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import utils
 import sqlite3
+import tqdm
 import time
 from pathlib import Path
 from typing import Optional, Dict, Any, Tuple
@@ -139,7 +140,7 @@ class PlanetTerpCacheWrapper:
 
         data = planetterp.grades(professor=name)
         grades, gpa = utils.aggregate_grade_data(data)
-        print(grades, gpa)
+        #print(grades, gpa)
         grades["gpa"] = gpa
         self.db.put("prof_grades", key, grades)
         return grades
@@ -189,21 +190,21 @@ class PlanetTerpFetcher:
         return allSet
 
     @staticmethod
-    def getAllProfessorNames(sleepTime=4):
+    def getAllProfessorNames(sleepTime=1):
         return PlanetTerpFetcher._getAllFromPagedEndpoint(planetterp.professors, sleepTime)
 
     @staticmethod
-    def getAllCourses(sleepTime=4):
+    def getAllCourses(sleepTime=1):
         return PlanetTerpFetcher._getAllFromPagedEndpoint(planetterp.courses, sleepTime)
 
     async def prefetchAllProfessorData(self):
         print("Starting prefetchAllProfessorData")
         professorNames = PlanetTerpFetcher.getAllProfessorNames()
         print("Got all professor names")
-        for name in professorNames:
+        for name in tqdm(professorNames):
             try:
                 self.getProfessorGrades(name)
-                time.sleep(5)
+                time.sleep(1)
                 await self.getProfessorRatings(name, reviews=False)
                 await self.getProfessorRatings(name, reviews=True)
             except:
@@ -214,10 +215,10 @@ class PlanetTerpFetcher:
         print("Starting prefetchAllCourseData")
         classNames = PlanetTerpFetcher.getAllCourses()
         print("Got all professor names")
-        for name in classNames:
+        for name in tqdm(classNames):
             try:
                 self.getClassGrades(name)
-                time.sleep(5)
+                time.sleep(1)
             except:
                 pass
         print("Done prefetchAllCourseData")

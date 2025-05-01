@@ -4,3 +4,4 @@ RateMyProfessorAPI
 uvicorn
 openai
 apscheduler
+tqdm
