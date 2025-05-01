@@ -182,7 +182,7 @@ class PlanetTerpFetcher:
                 for data in currentData:
                     allSet.add(data[key])
                 offset += 100
-                print("count:", len(allSet), "offset:", offest)
+                print("count:", len(allSet), "offset:", offset)
                 time.sleep(sleepTime)
             else:
                 hasMore = False
