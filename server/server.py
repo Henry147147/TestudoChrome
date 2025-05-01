@@ -9,7 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from contextlib import asynccontextmanager
 import logging
-
+from typing import Optional
 from fetchers import PlanetTerpFetcher
 import utils          # (kept from your file)
 
