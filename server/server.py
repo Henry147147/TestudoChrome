@@ -2,61 +2,63 @@
 uvicorn server:app --reload
 """
 
+from typing import Optional
+
+import logging
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from contextlib import asynccontextmanager
-import logging
-from typing import Optional
-from fetchers import PlanetTerpFetcher
-import utils          # (kept from your file)
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-# ------------------------------------------------------------------
-#  Create ONE FastAPI instance
-# ------------------------------------------------------------------
+from fetchers import PlanetTerpFetcher
+import utils
+
+# --------------------------------------------------
+#  FastAPI app + global exception handler
+# --------------------------------------------------
+
+
 app = FastAPI(
     title="PlanetTerp REST API proxy",
     version="1.3.0",
     description="Thin REST service exposing cached PlanetTerp data",
 )
 
-# ------------------------------------------------------------------
-#  CORS – allow Testudo and Chrome-extension origins
-# ------------------------------------------------------------------
+# CORS for quick testing — restrict in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://testudo.umd.edu"],
-    # any extension ID, any path
-    allow_origin_regex=r"^chrome-extension://[a-z0-9_]+$",
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_origins=["*"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ------------------------------------------------------------------
-#  Global error handler
-# ------------------------------------------------------------------
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logging.error("Unhandled exception on %s: %s", request.url.path, exc, exc_info=True)
+    logging.error("Unhandled exception on %s: %s",
+                  request.url.path, exc, exc_info=True)
     return JSONResponse(
         status_code=502,
-        content={"detail": "Upstream service error", "reason": str(exc)},
+        content={
+            "detail": "Upstream service error",
+            "reason": str(exc),
+        },
     )
 
-# ------------------------------------------------------------------
-#  Background pre-fetch job
-# ------------------------------------------------------------------
+
 _fetcher = PlanetTerpFetcher()
+
 
 async def weekly_prefetch():
     _fetcher.prefetchAllCourseData()
     await _fetcher.prefetchAllProfessorData()
 
+# Set up the scheduler
 scheduler = BackgroundScheduler()
-scheduler.add_job(weekly_prefetch, trigger=CronTrigger(hour=0, minute=0, day_of_week=0))
+trigger = CronTrigger(hour=0, minute=0, day_of_week=0)  # midnight every day
+scheduler.add_job(weekly_prefetch, trigger)
 scheduler.start()
 
 @asynccontextmanager
