@@ -42,7 +42,7 @@ async def add_cors_header(request: Request, call_next):
      response.headers.setdefault("Vary", "Origin")
      return response
 
- app.add_middleware(BaseHTTPMiddleware, dispatch=add_cors_header)
+app.add_middleware(BaseHTTPMiddleware, dispatch=add_cors_header)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
