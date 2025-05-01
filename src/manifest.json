@@ -9,18 +9,9 @@
     "default_popup": "popup.html"
   },
 
-  "permissions": [
-    "storage",
-    "activeTab",
-    "declarativeContent",
-    "scripting",
-    "tabs"
-  ],
-
   "host_permissions": [
-    "*://app.testudo.umd.edu/*",
-    "http://henry1477.asuscomm.com:8000/*",
-    "https://henry1477.asuscomm.com:8000/*"
+    "https://henry1477.asuscomm.com:8000/*",
+    "http://henry1477.asuscomm.com:8000/*"
   ],
 
   "content_scripts": [
