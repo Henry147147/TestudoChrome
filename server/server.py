@@ -49,8 +49,9 @@ async def global_exception_handler(request: Request, exc: Exception):
     logging.error("Unhandled exception on %s: %s",
                   request.url.path, exc, exc_info=True)
     return JSONResponse(
-        status_code=502,
+        status_code=200, # todo change this back to 500 error
         content={
+            "error": True,
             "detail": "Upstream service error",
             "reason": str(exc),
         },

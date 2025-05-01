@@ -158,9 +158,17 @@ function createBarChart(data, parent, professorName) {
     frame.append(axisY, axisX, xTitle, chart);
     parent.appendChild(frame);
     parent.parentElement.appendChild(reviewDiv);
-    fetch(`${HOST}/professor/${professorName}/reviews`, {mode: "no-cors"})
+    fetch(`${HOST}/professor/${professorName}/reviews`)
     .catch(err => console.log("error fetching reviews", err))
-      .then(res => res.json())
+      .then(res => {
+        try {
+          return res.json()
+        } catch (err) {
+          console.log({err})
+        }
+        return Promise.reject("error")
+        
+        })
       .then(data => {
         const containerDiv = document.querySelector('.professor-review-container');
         const reviewEl = document.createElement('p')
