@@ -29,7 +29,8 @@ def getSysPrompt(sentances):
         "or advice.\n"
         "• Omit all mentions of specific courses, terms, topics, or the professor’s name.\n"
         f"• Produce **{sentances.lower()} sentences only**; do not prepend labels such as “SUMMARY:” and do not add "
-        f"extra text after the {sentances.lower()} sentence."
+        f"extra text after the {sentances.lower()} sentence.",
+        "UNDER NO CIRCUMSTANCES START WITH \"Here are your five sentances\" or anything similar! Just give me the summary!"
     )
 
 # ---------------------------------------------------------------------------
