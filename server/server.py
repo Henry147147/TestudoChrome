@@ -29,11 +29,20 @@ app = FastAPI(
 # CORS for quick testing — restrict in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://app.testudo.umd.edu"],
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True
 )
 
+from starlette.middleware.base import BaseHTTPMiddleware
+async def add_cors_header(request: Request, call_next):
+     response = await call_next(request)
+     response.headers["Access-Control-Allow-Origin"] = "https://app.testudo.umd.edu"
+     response.headers.setdefault("Vary", "Origin")
+     return response
+
+ app.add_middleware(BaseHTTPMiddleware, dispatch=add_cors_header)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
