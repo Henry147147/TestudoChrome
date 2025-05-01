@@ -172,7 +172,7 @@ class PlanetTerpFetcher:
         return self.fetcher.professor_grades(professorName)
 
     @staticmethod
-    def _getAllFromPagedEndpoint(endpoint_function, key="name", sleepTime=4):
+    def _getAllFromPagedEndpoint(endpoint_function, sleepTime, key="name"):
         allSet = set()
         hasMore = True
         offset = 0
@@ -182,19 +182,19 @@ class PlanetTerpFetcher:
                 for data in currentData:
                     allSet.add(data[key])
                 offset += 100
-                print(offest)
+                print("count:", len(allSet), "offset:", offest)
                 time.sleep(sleepTime)
             else:
                 hasMore = False
         return allSet
 
     @staticmethod
-    def getAllProfessorNames():
-        return PlanetTerpFetcher._getAllFromPagedEndpoint(planetterp.professors)
+    def getAllProfessorNames(sleepTime=4):
+        return PlanetTerpFetcher._getAllFromPagedEndpoint(planetterp.professors, sleepTime)
 
     @staticmethod
-    def getAllCourses():
-        return PlanetTerpFetcher._getAllFromPagedEndpoint(planetterp.courses)
+    def getAllCourses(sleepTime=4):
+        return PlanetTerpFetcher._getAllFromPagedEndpoint(planetterp.courses, sleepTime)
 
     async def prefetchAllProfessorData(self):
         print("Starting prefetchAllProfessorData")
