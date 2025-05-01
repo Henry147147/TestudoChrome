@@ -189,11 +189,11 @@ class PlanetTerpFetcher:
 
     @staticmethod
     def getAllProfessorNames():
-        return PlanetTerpFetcher._getAllFromPagedEndpoint(plannetterp.professors)
+        return PlanetTerpFetcher._getAllFromPagedEndpoint(planetterp.professors)
 
     @staticmethod
     def getAllCourses():
-        return PlanetTerpFetcher._getAllFromPagedEndpoint(plannetterp.courses)
+        return PlanetTerpFetcher._getAllFromPagedEndpoint(planetterp.courses)
 
     async def prefetchAllProfessorData(self):
         print("Starting prefetchAllProfessorData")
